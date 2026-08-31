@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Portal TI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 480px; }
+        h2 { text-align: center; color: #004691; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; outline: none; }
+        input:focus, select:focus { border-color: #004691; }
+        button { width: 100%; padding: 12px; background-color: #004691; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background-color: #003366; }
+        button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+        .msg { margin-top: 15px; text-align: center; font-size: 14px; font-weight: bold; }
+        .msg.erro { color: #d9534f; }
+        .msg.sucesso { color: #5cb85c; }
+        .msg.alerta { color: #f0ad4e; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Criar Acesso ao Portal</h2>
+    <form id="formCadastro">
+        <div class="form-group">
+            <label for="matricula">Matrícula (8 dígitos):</label>
+            <input type="text" id="matricula" maxlength="8" inputmode="numeric" required placeholder="Ex: 00123456">
+        </div>
+
+        <div class="form-group">
+            <label for="nome">Nome e Sobrenome:</label>
+            <input type="text" id="nome" required placeholder="Ex: João Silva">
+        </div>
+
+        <div class="form-group">
+            <label for="email">E-mail Corporativo:</label>
+            <input type="email" id="email" required placeholder="usuario@fortatacadista.com.br">
+        </div>
+
+        <div class="form-group">
+            <label for="bandeira">Bandeira:</label>
+            <select id="bandeira" required>
+                <option value="">Selecione...</option>
+                <option value="Fort Atacadista">Fort Atacadista</option>
+                <option value="Comper">Comper</option>
+                <option value="Grupo Pereira">Grupo Pereira</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="filial">Filial / Loja:</label>
+            <input type="text" id="filial" required placeholder="Ex: Loja 325 - Itajaí">
+        </div>
+
+        <div class="form-group">
+            <label for="cargo">Cargo Atual:</label>
+            <input type="text" id="cargo" required placeholder="Ex: Encarregado / Operador / TI">
+        </div>
+
+        <button type="submit" id="btnCadastrar">Solicitar Cadastro</button>
+        <div id="mensagem" class="msg"></div>
+    </form>
+</div>
+
+<script>
+    const API_URL = 'COLE_AQUI_A_SUA_URL_DO_WEB_APP';
+
+    // Auto-preenche a matrícula se veio redirecionado do login
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('matricula')) {
+        document.getElementById('matricula').value = urlParams.get('matricula');
+    }
+
+    document.getElementById('formCadastro').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const btn = document.getElementById('btnCadastrar');
+        const msg = document.getElementById('mensagem');
+        msg.className = 'msg';
+        msg.innerText = '';
+
+        const matricula = document.getElementById('matricula').value.trim();
+        const nome = document.getElementById('nome').value.trim();
+        const email = document.getElementById('email').value.trim().toLowerCase();
+        const bandeira = document.getElementById('bandeira').value;
+        const filial = document.getElementById('filial').value.trim();
+        const cargo = document.getElementById('cargo').value.trim();
+
+        // 1. Validação de Matrícula (8 dígitos)
+        if (!/^\d{8}$/.test(matricula)) {
+            msg.className = 'msg erro';
+            msg.innerText = 'A matrícula deve ter exatamente 8 dígitos.';
+            return;
+        }
+
+        // 2. Validação de Domínio de E-mail
+        const dominiosValidos = ['@fortatacadista.com.br', '@comper.com.br', '@grpereira.com.br'];
+        const eDominioValido = dominiosValidos.some(dom => email.endsWith(dom));
+        if (!eDominioValido) {
+            msg.className = 'msg erro';
+            msg.innerText = 'E-mail corporativo inválido. Use um e-mail @fortatacadista, @comper ou @grpereira.';
+            return;
+        }
+
+        // 3. Bloqueio de E-mails Genéricos de Setor (ex: encarregados325@, frentedecaixa12@)
+        const padraoGenerico = /^(encarregados|frentedecaixa|gerenciadores)\d*@/i;
+        if (padraoGenerico.test(email)) {
+            msg.className = 'msg erro';
+            msg.innerText = 'E-mails de setores/lojas não são permitidos. Informe seu e-mail corporativo pessoal.';
+            return;
+        }
+
+        btn.innerText = 'Processando...';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'cadastrar',
+                    matricula, nome, email, bandeira, filial, cargo
+                })
+            });
+
+            const res = await response.json();
+
+            if (res.status === 'sucesso') {
+                msg.className = 'msg sucesso';
+                msg.innerText = res.mensagem;
+                setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+            } else if (res.status === 'pendente') {
+                msg.className = 'msg alerta';
+                msg.innerText = res.mensagem;
+            } else {
+                msg.className = 'msg erro';
+                msg.innerText = res.mensagem;
+                btn.disabled = false;
+                btn.innerText = 'Solicitar Cadastro';
+            }
+        } catch (err) {
+            msg.className = 'msg erro';
+            msg.innerText = 'Erro ao conectar ao servidor.';
+            btn.disabled = false;
+            btn.innerText = 'Solicitar Cadastro';
+        }
+    });
+</script>
+
+</body>
+</html>
