@@ -128,15 +128,18 @@
                 })
             });
 
-            const res = await response.json();
-
             if (res.status === 'sucesso') {
                 msg.className = 'msg sucesso';
                 msg.innerText = res.mensagem;
+                // Redireciona para o login em 3 segundos
                 setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+            
             } else if (res.status === 'pendente') {
                 msg.className = 'msg alerta';
                 msg.innerText = res.mensagem;
+                // Adicionado redirecionamento automático para a tela inicial após 4 segundos:
+                setTimeout(() => { window.location.href = 'index.html'; }, 4000);
+            
             } else {
                 msg.className = 'msg erro';
                 msg.innerText = res.mensagem;
