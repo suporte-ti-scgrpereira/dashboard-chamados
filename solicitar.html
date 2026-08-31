@@ -71,6 +71,28 @@
         <button type="submit" id="btnEnviar" class="btn-enviar">Enviar Chamado</button>
         <div id="mensagem" class="msg"></div>
     </form>
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #ddd;">
+    
+    <div class="chamados-container">
+        <h3 style="color: #004691; margin-bottom: 15px;">Meus Chamados Ativos</h3>
+        
+        <div id="loadingChamados" style="font-size: 14px; color: #666;">Carregando chamados...</div>
+        
+        <table id="tabelaChamados" style="width: 100%; border-collapse: collapse; display: none; font-size: 14px;">
+            <thead>
+                <tr style="background-color: #004691; color: white; text-align: left;">
+                    <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Título</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Setor</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Status</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Prioridade</th>
+                </tr>
+            </thead>
+            <tbody id="corpoTabela">
+                <!-- Os chamados serão inseridos aqui dinamicamente -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
@@ -157,6 +179,56 @@
             btn.innerText = 'Enviar Chamado';
         }
     });
+    
+    // Função para buscar e renderizar os chamados ativos do usuário
+    async function carregarMeusChamados() {
+        const loading = document.getElementById('loadingChamados');
+        const tabela = document.getElementById('tabelaChamados');
+        const corpoTabela = document.getElementById('corpoTabela');
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'buscar_chamados',
+                    email: usuarioLogado.email
+                })
+            });
+
+            const resultado = await response.json();
+
+            if (resultado.status === 'sucesso' && resultado.chamados.length > 0) {
+                corpoTabela.innerHTML = '';
+                
+                resultado.chamados.forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${c.id}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${c.titulo}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${c.setor}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <span style="padding: 3px 8px; border-radius: 4px; background: #e0e0e0; font-size: 12px;">
+                                ${c.status}
+                            </span>
+                        </td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${c.prioridade}</td>
+                    `;
+                    corpoTabela.appendChild(tr);
+                });
+
+                loading.style.display = 'none';
+                tabela.style.display = 'table';
+            } else {
+                loading.innerText = 'Você não possui chamados ativos no momento.';
+            }
+        } catch (err) {
+            loading.innerText = 'Não foi possível carregar os chamados ativos.';
+        }
+    }
+
+    // Executa a busca ao carregar a página
+    carregarMeusChamados();
 </script>
 
 </body>
