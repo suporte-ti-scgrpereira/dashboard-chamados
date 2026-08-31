@@ -3,9 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>Painel do Solicitante - Novo Chamado</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; padding: 20px; }
+        .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004691; padding-bottom: 15px; margin-bottom: 20px; }
+        h2 { color: #004691; }
+        .user-info { font-size: 14px; color: #555; text-align: right; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        textarea { height: 100px; resize: vertical; }
+        .btn-enviar { width: 100%; padding: 12px; background-color: #004691; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-enviar:hover { background-color: #003366; }
+        .btn-enviar:disabled { background-color: #aaa; cursor: not-allowed; }
+        .msg { margin-top: 15px; text-align: center; font-size: 14px; font-weight: bold; }
+        .msg.sucesso { color: #5cb85c; }
+        .msg.erro { color: #d9534f; }
+        .anexo-info { font-size: 12px; color: #666; margin-top: 4px; }
+    </style>
 </head>
 <body>
-    <h1>Hello, World!</h1>
+
+<div class="container">
+    <div class="header">
+        <h2>Abertura de Chamado</h2>
+        <div class="user-info">
+            <strong id="display-nome">Carregando...</strong><br>
+            <span id="display-loja"></span>
+        </div>
+    </div>
+
+    <form id="formChamado">
+        <div class="form-group">
+            <label for="setor">Setor com Problema:</label>
+            <select id="setor" required>
+                <option value="">Selecione o setor...</option>
+                <option value="Frente de Caixa / PDV">Frente de Caixa / PDV</option>
+                <option value="Recebimento / Depósito">Recebimento / Depósito</option>
+                <option value="Financeiro / Tesouraria">Financeiro / Tesouraria</option>
+                <option value="RH / DPT Pessoal">RH / DPT Pessoal</option>
+                <option value="Servidores / Rede / Wi-Fi">Servidores / Rede / Wi-Fi</option>
+                <option value="Impressoras / Balanças">Impressoras / Balanças</option>
+                <option value="Outros">Outros</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="titulo">Título do Problema:</label>
+            <input type="text" id="titulo" required placeholder="Ex: Impressora do caixa 05 não liga">
+        </div>
+
+        <div class="form-group">
+            <label for="descricao">Descrição Detalhada:</label>
+            <textarea id="descricao" required placeholder="Descreva com detalhes o que está acontecendo..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="anexos">Anexar Fotos ou Vídeos (Opcional):</label>
+            <input type="file" id="anexos" multiple accept="image/*,video/*">
+            <div class="anexo-info">Você pode selecionar múltiplos arquivos (Imagens ou Vídeos).</div>
+        </div>
+
+        <button type="submit" id="btnEnviar" class="btn-enviar">Enviar Chamado</button>
+        <div id="mensagem" class="msg"></div>
+    </form>
+</div>
+
+<script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyszNaEjUlKHdS6sM_2tejIU2LSi4e6uFUWeq4-uTGXIFKHogKaAzrmgpffx8fqoZjX/exec';
+
+    // Recupera os dados do usuário salvos no Login
+    const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+
+    // Redireciona para o login se não estiver autenticado
+    if (!usuarioLogado) {
+        window.location.href = 'index.html';
+    } else {
+        document.getElementById('display-nome').innerText = usuarioLogado.nome;
+        document.getElementById('display-loja').innerText = `${usuarioLogado.bandeira} - ${usuarioLogado.filial}`;
+    }
+
+    // Função para converter arquivos em Base64
+    const fileToBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            const base64String = reader.result.split(',')[1];
+            resolve({ name: file.name, mimeType: file.type, base64: base64String });
+        };
+        reader.onerror = error => reject(error);
+    });
+
+    document.getElementById('formChamado').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = document.getElementById('btnEnviar');
+        const msg = document.getElementById('mensagem');
+        msg.className = 'msg';
+        msg.innerText = '';
+
+        btn.innerText = 'Enviando Chamado...';
+        btn.disabled = true;
+
+        try {
+            const filesInput = document.getElementById('anexos');
+            const listaAnexos = [];
+
+            // Processa arquivos selecionados
+            if (filesInput.files.length > 0) {
+                for (let i = 0; i < filesInput.files.length; i++) {
+                    const arquivoConvertido = await fileToBase64(filesInput.files[i]);
+                    listaAnexos.push(arquivoConvertido);
+                }
+            }
+
+            const payload = {
+                acao: 'criar_chamado',
+                nome: usuarioLogado.nome,
+                email: usuarioLogado.email,
+                bandeira: usuarioLogado.bandeira,
+                filial: usuarioLogado.filial,
+                setor: document.getElementById('setor').value,
+                titulo: document.getElementById('titulo').value.trim(),
+                descricao: document.getElementById('descricao').value.trim(),
+                anexos: listaAnexos
+            };
+
+            await fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+
+            msg.className = 'msg sucesso';
+            msg.innerText = 'Chamado registrado com sucesso! Atualizando...';
+            
+            setTimeout(() => {
+                document.getElementById('formChamado').reset();
+                msg.innerText = '';
+                btn.disabled = false;
+                btn.innerText = 'Enviar Chamado';
+            }, 3000);
+
+        } catch (err) {
+            msg.className = 'msg erro';
+            msg.innerText = 'Erro ao enviar chamado. Tente novamente.';
+            btn.disabled = false;
+            btn.innerText = 'Enviar Chamado';
+        }
+    });
+</script>
+
 </body>
 </html>
