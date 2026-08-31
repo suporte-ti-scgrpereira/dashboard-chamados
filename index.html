@@ -19,7 +19,6 @@
 <body>
 
     <div class="login-card">
-        <!-- Adicione sua imagem no repositório do GitHub e ajuste o nome aqui -->
         <img src="logo.png" alt="Logo Empresa" class="logo">
         
         <h2>Acesso ao Portal</h2>
@@ -36,7 +35,6 @@
     </div>
 
     <script>
-        // COLE A URL DO SEU APPS SCRIPT AQUI ABAIXO:
         const API_URL = 'https://script.google.com/macros/s/AKfycbyszNaEjUlKHdS6sM_2tejIU2LSi4e6uFUWeq4-uTGXIFKHogKaAzrmgpffx8fqoZjX/exec';
 
         const formLogin = document.getElementById('form-login');
@@ -47,9 +45,8 @@
             e.preventDefault();
             const matricula = document.getElementById('matricula').value.trim();
 
-            // Validação: Exatamente 8 números
+            // Validação de 8 dígitos numéricos
             const apenasNumeros8Digitos = /^\d{8}$/;
-    
             if (!apenasNumeros8Digitos.test(matricula)) {
                 msgErro.innerText = 'A matrícula deve conter exatamente 8 números!';
                 return;
@@ -64,23 +61,24 @@
                 const resultado = await response.json();
 
                 if (resultado.status === 'sucesso') {
-                // Guarda as informações do colaborador na sessão do navegador
-                sessionStorage.setItem('usuarioLogado', JSON.stringify(resultado.usuario));
-            
-                // Redirecionamento por cargo (tratando pontos e espaços)
-                const cargo = resultado.usuario.cargo.toString().toUpperCase().replace(/\./g, '').trim();
-            
-                if (cargo === 'TI' || cargo === 'CPD') {
-                    window.location.href = 'receptador.html';
+                    sessionStorage.setItem('usuarioLogado', JSON.stringify(resultado.usuario));
+                    
+                    const cargo = resultado.usuario.cargo.toString().toUpperCase().replace(/\./g, '').trim();
+
+                    if (cargo === 'TI' || cargo === 'CPD') {
+                        window.location.href = 'receptador.html';
+                    } else {
+                        window.location.href = 'solicitar.html';
+                    }
+                } else if (resultado.status === 'nao_encontrado') {
+                    window.location.href = `cadastro.html?matricula=${encodeURIComponent(matricula)}`;
                 } else {
-                    window.location.href = 'solicitar.html';
+                    msgErro.innerText = resultado.mensagem;
+                    btnEntrar.innerText = 'Entrar';
+                    btnEntrar.disabled = false;
                 }
-            } else if (resultado.status === 'nao_encontrado') {
-                // Redireciona para o cadastro enviando a matrícula digitada
-                window.location.href = `cadastro.html?matricula=${encodeURIComponent(matricula)}`;
-            } else {
-                // Exibe mensagens de erro genéricas do servidor
-                msgErro.innerText = resultado.mensagem;
+            } catch (erro) {
+                msgErro.innerText = 'Erro ao conectar com a base de dados.';
                 btnEntrar.innerText = 'Entrar';
                 btnEntrar.disabled = false;
             }
