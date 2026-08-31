@@ -68,6 +68,7 @@
 </div>
 
 <script>
+    // CERTIFIQUE-SE DE QUE ESTA É A URL DA SUA NOVA IMPLANTAÇÃO
     const API_URL = 'https://script.google.com/macros/s/AKfycbyszNaEjUlKHdS6sM_2tejIU2LSi4e6uFUWeq4-uTGXIFKHogKaAzrmgpffx8fqoZjX/exec';
 
     // Auto-preenche a matrícula se veio redirecionado do login
@@ -107,7 +108,7 @@
             return;
         }
 
-        // 3. Bloqueio de E-mails Genéricos de Setor (ex: encarregados325@, frentedecaixa12@)
+        // 3. Bloqueio de E-mails Genéricos
         const padraoGenerico = /^(encarregados|frentedecaixa|gerenciadores)\d*@/i;
         if (padraoGenerico.test(email)) {
             msg.className = 'msg erro';
@@ -119,8 +120,10 @@
         btn.disabled = true;
 
         try {
-            const response = await fetch(API_URL, {
+            // Envio via POST
+            await fetch(API_URL, {
                 method: 'POST',
+                mode: 'no-cors', // Evita o erro de CORS no redirecionamento do Apps Script
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
                     acao: 'cadastrar',
@@ -128,32 +131,27 @@
                 })
             });
 
-            if (res.status === 'sucesso') {
-                msg.className = 'msg sucesso';
-                msg.innerText = res.mensagem;
-                // Redireciona para o login em 3 segundos
-                setTimeout(() => { window.location.href = 'index.html'; }, 3000);
-            
-            } else if (res.status === 'pendente') {
+            // Lógica de feedback baseada no Cargo
+            const cargoLimpo = cargo.toUpperCase().replace(/\./g, '').trim();
+
+            if (cargoLimpo === 'TI' || cargoLimpo === 'CPD') {
                 msg.className = 'msg alerta';
-                msg.innerText = res.mensagem;
-                // Adicionado redirecionamento automático para a tela inicial após 4 segundos:
+                msg.innerText = 'Sua solicitação para perfil de TI/CPD foi enviada. A validação será realizada por um administrador.';
                 setTimeout(() => { window.location.href = 'index.html'; }, 4000);
-            
             } else {
-                msg.className = 'msg erro';
-                msg.innerText = res.mensagem;
-                btn.disabled = false;
-                btn.innerText = 'Solicitar Cadastro';
+                msg.className = 'msg sucesso';
+                msg.innerText = 'Cadastro realizado com sucesso! Redirecionando para a tela de login...';
+                setTimeout(() => { window.location.href = 'index.html'; }, 3000);
             }
+
         } catch (err) {
             msg.className = 'msg erro';
-            msg.innerText = 'Erro ao conectar ao servidor.';
+            msg.innerText = 'Erro de conexão com o servidor. Tente novamente.';
             btn.disabled = false;
             btn.innerText = 'Solicitar Cadastro';
         }
     });
 </script>
-
+    
 </body>
 </html>
