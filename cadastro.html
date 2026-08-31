@@ -120,18 +120,26 @@
         btn.disabled = true;
 
         try {
-            // Envio via POST
+            // Envia a requisição para o Apps Script
             await fetch(API_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Evita o erro de CORS no redirecionamento do Apps Script
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
                     acao: 'cadastrar',
-                    matricula, nome, email, bandeira, filial, cargo
+                    matricula: matricula,
+                    nome: nome,
+                    email: email,
+                    bandeira: bandeira,
+                    filial: filial,
+                    cargo: cargo
                 })
             });
 
-            // Lógica de feedback baseada no Cargo
+            // Como a requisição foi concluída sem falha de rede,
+            // processamos a resposta visual no front-end:
             const cargoLimpo = cargo.toUpperCase().replace(/\./g, '').trim();
 
             if (cargoLimpo === 'TI' || cargoLimpo === 'CPD') {
@@ -145,8 +153,9 @@
             }
 
         } catch (err) {
+            // Só cairá aqui se o usuário estiver totalmente sem internet
             msg.className = 'msg erro';
-            msg.innerText = 'Erro de conexão com o servidor. Tente novamente.';
+            msg.innerText = 'Erro de conexão. Verifique sua internet e tente novamente.';
             btn.disabled = false;
             btn.innerText = 'Solicitar Cadastro';
         }
