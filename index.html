@@ -64,24 +64,23 @@
                 const resultado = await response.json();
 
                 if (resultado.status === 'sucesso') {
-                    // Guarda as informações do colaborador na sessão do navegador
-                    sessionStorage.setItem('usuarioLogado', JSON.stringify(resultado.usuario));
-
-                    // Redirecionamento por cargo
-                    const cargo = resultado.usuario.cargo.toString().toUpperCase().trim();
-
-                    if (cargo === 'TI') {
-                        window.location.href = 'receptador.html';
-                    } else {
-                        window.location.href = 'solicitar.html';
-                    }
+                // Guarda as informações do colaborador na sessão do navegador
+                sessionStorage.setItem('usuarioLogado', JSON.stringify(resultado.usuario));
+            
+                // Redirecionamento por cargo (tratando pontos e espaços)
+                const cargo = resultado.usuario.cargo.toString().toUpperCase().replace(/\./g, '').trim();
+            
+                if (cargo === 'TI' || cargo === 'CPD') {
+                    window.location.href = 'receptador.html';
                 } else {
-                    msgErro.innerText = resultado.mensagem;
-                    btnEntrar.innerText = 'Entrar';
-                    btnEntrar.disabled = false;
+                    window.location.href = 'solicitar.html';
                 }
-            } catch (erro) {
-                msgErro.innerText = 'Erro ao conectar com a base de dados.';
+            } else if (resultado.status === 'nao_encontrado') {
+                // Redireciona para o cadastro enviando a matrícula digitada
+                window.location.href = `cadastro.html?matricula=${encodeURIComponent(matricula)}`;
+            } else {
+                // Exibe mensagens de erro genéricas do servidor
+                msgErro.innerText = resultado.mensagem;
                 btnEntrar.innerText = 'Entrar';
                 btnEntrar.disabled = false;
             }
