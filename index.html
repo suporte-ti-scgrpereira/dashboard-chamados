@@ -10,17 +10,37 @@
         .logo { max-width: 140px; margin-bottom: 20px; }
         .form-group { text-align: left; margin-bottom: 20px; }
         label { font-weight: 600; font-size: 14px; color: #333; display: block; margin-bottom: 8px; }
-        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
         button { width: 100%; padding: 12px; background-color: #0056b3; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button:hover { background-color: #003d82; }
         #mensagem-erro { color: #d9534f; font-size: 14px; margin-top: 15px; font-weight: 600; }
+        
+        /* Pop-up Modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; top: 0; 
+            width: 100%; height: 100%; 
+            background-color: rgba(0,0,0,0.6); 
+            justify-content: center; 
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fff; 
+            padding: 25px; 
+            border-radius: 8px; 
+            width: 90%; 
+            max-width: 400px; 
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
 
     <div class="login-card">
         <img src="logo.png" alt="Logo Empresa" class="logo">
-        
         <h2>Acesso ao Portal</h2>
         
         <form id="form-login">
@@ -34,33 +54,61 @@
         <p id="mensagem-erro"></p>
     </div>
 
+    <!-- Modal de Senha do TI (Dentro do Body) -->
+    <div id="modalSenha" class="modal">
+        <div class="modal-content">
+            <h3 style="color: #004691; margin-bottom: 15px;">Autenticação TI/CPD</h3>
+            <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Digite a sua senha de acesso:</p>
+            <input type="password" id="senhaTI" placeholder="Sua senha">
+            <button onclick="confirmarSenhaTI()" style="margin-top: 15px; background-color: #004691;">Confirmar</button>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbyszNaEjUlKHdS6sM_2tejIU2LSi4e6uFUWeq4-uTGXIFKHogKaAzrmgpffx8fqoZjX/exec';
 
         const formLogin = document.getElementById('form-login');
         const btnEntrar = document.getElementById('btn-entrar');
         const msgErro = document.getElementById('mensagem-erro');
+        let matriculaGuardada = "";
 
-        formLogin.addEventListener('submit', async (e) => {
+        formLogin.addEventListener('submit', (e) => {
             e.preventDefault();
             const matricula = document.getElementById('matricula').value.trim();
 
-            // Validação de 8 dígitos numéricos
             const apenasNumeros8Digitos = /^\d{8}$/;
             if (!apenasNumeros8Digitos.test(matricula)) {
                 msgErro.innerText = 'A matrícula deve conter exatamente 8 números!';
                 return;
             }
 
+            matriculaGuardada = matricula;
+            fazerLogin(matricula, "");
+        });
+
+        async function fazerLogin(matricula, senha) {
             msgErro.innerText = '';
             btnEntrar.innerText = 'Verificando...';
             btnEntrar.disabled = true;
 
             try {
-                const response = await fetch(`${API_URL}?matricula=${encodeURIComponent(matricula)}`);
+                let url = `${API_URL}?matricula=${encodeURIComponent(matricula)}`;
+                if (senha) {
+                    url += `&senha=${encodeURIComponent(senha)}`;
+                }
+
+                const response = await fetch(url);
                 const resultado = await response.json();
 
-                if (resultado.status === 'sucesso') {
+                // Caso precise de senha
+                if (resultado.status === 'requer_senha') {
+                    btnEntrar.innerText = 'Entrar';
+                    btnEntrar.disabled = false;
+                    document.getElementById('modalSenha').style.display = 'flex';
+                    document.getElementById('senhaTI').focus();
+                } 
+                // Sucesso
+                else if (resultado.status === 'sucesso') {
                     sessionStorage.setItem('usuarioLogado', JSON.stringify(resultado.usuario));
                     
                     const cargo = resultado.usuario.cargo.toString().toUpperCase().replace(/\./g, '').trim();
@@ -70,9 +118,13 @@
                     } else {
                         window.location.href = 'solicitar.html';
                     }
-                } else if (resultado.status === 'nao_encontrado') {
+                } 
+                // Matrícula não existe
+                else if (resultado.status === 'nao_encontrado') {
                     window.location.href = `cadastro.html?matricula=${encodeURIComponent(matricula)}`;
-                } else {
+                } 
+                // Senha errada ou erro de validação
+                else {
                     msgErro.innerText = resultado.mensagem;
                     btnEntrar.innerText = 'Entrar';
                     btnEntrar.disabled = false;
@@ -82,7 +134,17 @@
                 btnEntrar.innerText = 'Entrar';
                 btnEntrar.disabled = false;
             }
-        });
+        }
+
+        function confirmarSenhaTI() {
+            const senha = document.getElementById('senhaTI').value.trim();
+            if (!senha) {
+                alert('Digite sua senha!');
+                return;
+            }
+            document.getElementById('modalSenha').style.display = 'none';
+            fazerLogin(matriculaGuardada, senha);
+        }
     </script>
 
 </body>
