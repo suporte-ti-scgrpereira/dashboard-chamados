@@ -205,7 +205,7 @@
         });
     }
 
-    // Renderiza a Tabela de Ativos e adiciona o link para a página de Tramitação
+    // Renderiza a Tabela de Ativos com Selects de Edição Rápida
     function renderizarTabelaAtivos(chamados) {
         const tbody = document.getElementById('tabelaAtivos');
         tbody.innerHTML = '';
@@ -216,21 +216,61 @@
         }
 
         chamados.forEach(c => {
-            const badgeClass = c.status === 'Pendente' ? 'badge-pendente' : 'badge-atendimento';
             tbody.innerHTML += `
                 <tr>
                     <td><b>${c.id}</b></td>
                     <td>${c.titulo}</td>
                     <td>${c.solicitante}</td>
                     <td>${c.setor}</td>
-                    <td>${c.prioridade}</td>
-                    <td><span class="badge ${badgeClass}">${c.status}</span></td>
                     <td>
-                        <a href="idchamado.html?id=${c.id}" class="btn-acao">Abrir / Tramitar</a>
+                        <select onchange="alterarAtributo('${c.id}', null, this.value)" style="padding: 4px; border-radius: 4px;">
+                            <option value="Baixa" ${c.prioridade === 'Baixa' ? 'selected' : ''}>Baixa</option>
+                            <option value="Normal" ${c.prioridade === 'Normal' ? 'selected' : ''}>Normal</option>
+                            <option value="Alta" ${c.prioridade === 'Alta' ? 'selected' : ''}>Alta</option>
+                            <option value="Urgente" ${c.prioridade === 'Urgente' ? 'selected' : ''}>Urgente</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select onchange="alterarAtributo('${c.id}', this.value, null)" style="padding: 4px; border-radius: 4px; font-weight: bold;">
+                            <option value="Pendente" ${c.status === 'Pendente' ? 'selected' : ''}>Pendente</option>
+                            <option value="Em Atendimento" ${c.status === 'Em Atendimento' ? 'selected' : ''}>Em Atendimento</option>
+                            <option value="Aguardando Usuário" ${c.status === 'Aguardando Usuário' ? 'selected' : ''}>Aguardando Usuário</option>
+                            <option value="Concluído">Concluído (Finalizar)</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </td>
+                    <td>
+                        <a href="idchamado.html?id=${c.id}" class="btn-acao">💬 Tramitar</a>
                     </td>
                 </tr>
             `;
         });
+    }
+
+    // Função que chama o Backend para atualizar o Status ou Prioridade
+    async function alterarAtributo(id, novoStatus, novaPrioridade) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'atualizar_status_prioridade',
+                    idChamado: id,
+                    status: novoStatus,
+                    prioridade: novaPrioridade
+                })
+            });
+
+            const res = await response.json();
+            if (res.status === 'sucesso') {
+                alert("Chamado atualizado!");
+                carregarDados(); // Recarrega os gráficos e a tabela
+            } else {
+                alert("Erro ao atualizar: " + res.mensagem);
+            }
+        } catch (err) {
+            alert("Erro de conexão ao atualizar.");
+        }
     }
 
     // Executa ao carregar a página
