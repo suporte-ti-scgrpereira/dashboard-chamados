@@ -113,7 +113,9 @@
                 <label>Data Fim:</label>
                 <input type="date" id="dataFim">
             </div>
-            <button class="btn-acao" onclick="gerarRelatorio()">Gerar Relatório</button>
+            <button onclick="gerarRelatorio()" class="btn-acao" style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                📊 Gerar Relatório (CSV)
+            </button>
         </div>
         <table>
             <thead>
@@ -344,6 +346,70 @@
             }
         } catch (err) {
             console.error("Erro ao carregar filiais:", err);
+        }
+    }
+
+    // Função para exportar os chamados em formato CSV/Excel
+    async function gerarRelatorio() {
+        const lojaSelecionada = document.getElementById('selectLoja').value;
+        const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || {};
+
+        try {
+            // Busca os dados atualizados direto do servidor
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    acao: 'dados_dashboard', 
+                    filial: lojaSelecionada,
+                    matricula: usuarioLogado.matricula 
+                })
+            });
+
+            const res = await response.json();
+
+            if (res.status !== 'sucesso') {
+                alert("Erro ao puxar dados para o relatório.");
+                return;
+            }
+
+            const chamados = res.chamados;
+
+            if (!chamados || chamados.length === 0) {
+                alert("Nenhum chamado encontrado para gerar relatório neste filtro.");
+                return;
+            }
+
+            // Monta o cabeçalho do arquivo CSV
+            let csvContent = "\uFEFF"; // Byte Order Mark (BOM) para garantir acentuação correta no Excel
+            csvContent += "ID Chamado;Título;Solicitante;Setor;Prioridade;Status\n";
+
+            // Preenche as linhas com os dados
+            chamados.forEach(c => {
+                const tituloLimpo = `"${(c.titulo || '').replace(/"/g, '""')}"`;
+                const solicitanteLimpo = `"${(c.solicitante || '').replace(/"/g, '""')}"`;
+                
+                csvContent += `${c.id};${tituloLimpo};${solicitanteLimpo};${c.setor};${c.prioridade};${c.status}\n`;
+            });
+
+            // Cria o link invisível para download do arquivo
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            const dataHoje = new Date().toISOString().split('T')[0];
+            const nomeLoja = lojaSelecionada ? `_Loja_${lojaSelecionada}` : '_Geral';
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Relatorio_Chamados${nomeLoja}_${dataHoje}.csv`);
+            document.body.appendChild(link);
+            
+            link.click();
+            document.body.removeChild(link);
+
+        } catch (err) {
+            console.error("Erro ao gerar relatório:", err);
+            alert("Erro de conexão ao gerar o relatório.");
         }
     }
 
