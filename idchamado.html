@@ -56,7 +56,27 @@
     <div class="card">
         <div class="card-header">
             <h2 id="tituloChamado">Carregando detalhes...</h2>
-            <span id="badgeStatus" style="padding: 4px 10px; border-radius: 4px; font-weight: bold; background: #eee; font-size: 13px;">...</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+    <div>
+        <label style="font-size: 11px; font-weight: bold; color: #666;">PRIORIDADE:</label>
+        <select id="selectPrioridade" onchange="atualizarChamadoAtual()" style="padding: 5px; border-radius: 4px;">
+            <option value="Baixa">Baixa</option>
+            <option value="Normal">Normal</option>
+            <option value="Alta">Alta</option>
+            <option value="Urgente">Urgente</option>
+        </select>
+    </div>
+    <div>
+        <label style="font-size: 11px; font-weight: bold; color: #666;">STATUS:</label>
+        <select id="selectStatus" onchange="atualizarChamadoAtual()" style="padding: 5px; border-radius: 4px; font-weight: bold;">
+            <option value="Pendente">Pendente</option>
+            <option value="Em Atendimento">Em Atendimento</option>
+            <option value="Aguardando Usuário">Aguardando Usuário</option>
+            <option value="Concluído">Concluído</option>
+            <option value="Cancelado">Cancelado</option>
+        </select>
+    </div>
+</div>
         </div>
 
         <div class="info-grid">
@@ -127,13 +147,17 @@
                 const c = res.chamado;
                 
                 document.getElementById('tituloChamado').innerText = c.titulo;
-                document.getElementById('badgeStatus').innerText = c.status;
+                
+                // ATENÇÃO: Substitua o badgeStatus por estes dois seletores
+                document.getElementById('selectStatus').value = c.status || 'Pendente';
+                document.getElementById('selectPrioridade').value = c.prioridade || 'Normal';
+                
                 document.getElementById('nomeSolicitante').innerText = c.nome;
                 document.getElementById('emailSolicitante').innerText = c.email;
                 document.getElementById('filialSolicitante').innerText = `${c.bandeira} - ${c.filial}`;
                 document.getElementById('setorChamado').innerText = c.setor;
                 document.getElementById('descricaoChamado').innerText = c.descricao;
-
+            
                 // Renderiza os links de anexos do Drive
                 const boxAnexos = document.getElementById('listaAnexos');
                 if (c.anexos && c.anexos.trim() !== '') {
@@ -145,8 +169,8 @@
                 } else {
                     boxAnexos.innerText = 'Nenhum anexo enviado.';
                 }
-
-                // Renderiza as mensagens de tramitação
+            
+                // Renderiza o histórico de conversas
                 renderizarChat(res.mensageria);
             } else {
                 alert("Chamado não foi encontrado no sistema.");
@@ -210,6 +234,31 @@
             }
         } catch (err) {
             alert("Erro ao enviar tramitação.");
+        }
+    }
+
+    async function atualizarChamadoAtual() {
+        const novoStatus = document.getElementById('selectStatus').value;
+        const novaPrioridade = document.getElementById('selectPrioridade').value;
+
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'atualizar_status_prioridade',
+                    idChamado: idChamado,
+                    status: novoStatus,
+                    prioridade: novaPrioridade
+                })
+            });
+            
+            if (novoStatus === 'Concluído' || novoStatus === 'Cancelado') {
+                alert("Chamado finalizado e movido para o histórico!");
+                window.location.href = 'receptador.html';
+            }
+        } catch (err) {
+            alert("Erro ao alterar o status.");
         }
     }
 
