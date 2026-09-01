@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tramitação do Chamado</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-voltar { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 14px; }
+        
+        .card { background: white; border-radius: 8px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        .card-header { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .card-header h2 { color: #004691; font-size: 20px; }
+        
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; }
+        .info-item label { font-size: 12px; color: #666; font-weight: bold; display: block; }
+        .info-item span { font-size: 14px; color: #222; font-weight: 600; }
+        
+        .descricao-box { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 15px; line-height: 1.5; font-size: 14px; }
+        
+        /* Seção de Anexos */
+        .anexos-box { margin-bottom: 15px; }
+        .anexos-box a { display: inline-block; background: #e0e0e0; color: #333; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; margin-right: 8px; margin-top: 5px; }
+        .anexos-box a:hover { background: #d0d0d0; }
+
+        /* Chat de Tramitação */
+        .chat-container { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fafafa; }
+        .chat-historico { height: 300px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        .mensagem { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 14px; position: relative; }
+        .msg-ti { background: #eef5ff; border: 1px solid #b3d4fc; align-self: flex-start; }
+        .msg-usuario { background: #e2f0d9; border: 1px solid #c2e0b6; align-self: flex-end; }
+        
+        .msg-autor { font-weight: bold; font-size: 12px; color: #004691; margin-bottom: 3px; display: block; }
+        .msg-data { font-size: 10px; color: #888; text-align: right; margin-top: 5px; display: block; }
+
+        .chat-input { display: flex; padding: 10px; background: white; border-top: 1px solid #ddd; gap: 10px; }
+        .chat-input textarea { flex: 1; border: 1px solid #ccc; border-radius: 4px; padding: 10px; font-size: 14px; resize: none; height: 45px; }
+        .btn-enviar { background: #004691; color: white; border: none; padding: 0 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn-enviar:hover { background: #003366; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-top">
+        <a href="receptador.html" class="btn-voltar">← Voltar ao Painel</a>
+        <h3 id="idChamadoTitulo" style="color: #004691;">Chamado: ...</h3>
+    </div>
+
+    <!-- CARDE DE INFORMAÇÕES DO CHAMADO -->
+    <div class="card">
+        <div class="card-header">
+            <h2 id="tituloChamado">Carregando detalhes...</h2>
+            <span id="badgeStatus" style="padding: 4px 10px; border-radius: 4px; font-weight: bold; background: #eee; font-size: 13px;">...</span>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item"><label>SOLICITANTE</label><span id="nomeSolicitante">-</span></div>
+            <div class="info-item"><label>E-MAIL</label><span id="emailSolicitante">-</span></div>
+            <div class="info-item"><label>FILIAL / BANDEIRA</label><span id="filialSolicitante">-</span></div>
+            <div class="info-item"><label>SETOR</label><span id="setorChamado">-</span></div>
+        </div>
+
+        <label style="font-weight: bold; font-size: 13px; color: #555;">Descrição do Problema:</label>
+        <div class="descricao-box" id="descricaoChamado">-</div>
+
+        <div class="anexos-box" id="boxAnexos">
+            <label style="font-weight: bold; font-size: 13px; color: #555; display: block;">Anexos:</label>
+            <div id="listaAnexos">Nenhum anexo.</div>
+        </div>
+    </div>
+
+    <!-- CARDE DE TRAMITAÇÃO / MENSAGENS -->
+    <div class="card">
+        <h3 style="color: #004691; margin-bottom: 15px;">Histórico de Tramitação</h3>
+        
+        <div class="chat-container">
+            <div class="chat-historico" id="chatHistorico">
+                <div style="text-align: center; color: #888; font-size: 13px;">Carregando histórico de mensagens...</div>
+            </div>
+            
+            <div class="chat-input">
+                <textarea id="msgTexto" placeholder="Escreva um retorno ou atualização para o chamado..."></textarea>
+                <button class="btn-enviar" onclick="enviarMensagem()">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyszNaEjUlKHdS6sM_2tejIU2LSi4e6uFUWeq4-uTGXIFKHogKaAzrmgpffx8fqoZjX/exec';
+    
+    // Captura o ID do chamado que veio na URL (ex: ?id=CH-00001)
+    const urlParams = new URLSearchParams(window.location.search);
+    const idChamado = urlParams.get('id');
+    
+    // Pega os dados do usuário que está logado no navegador
+    const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || { nome: "Técnico TI" };
+
+    async function carregarDetalhes() {
+        if (!idChamado) {
+            alert("ID do chamado não encontrado!");
+            window.location.href = 'receptador.html';
+            return;
+        }
+
+        document.getElementById('idChamadoTitulo').innerText = `Chamado: ${idChamado}`;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'buscar_detalhe_chamado',
+                    idChamado: idChamado
+                })
+            });
+
+            const res = await response.json();
+
+            if (res.status === 'sucesso' && res.chamado) {
+                const c = res.chamado;
+                
+                document.getElementById('tituloChamado').innerText = c.titulo;
+                document.getElementById('badgeStatus').innerText = c.status;
+                document.getElementById('nomeSolicitante').innerText = c.nome;
+                document.getElementById('emailSolicitante').innerText = c.email;
+                document.getElementById('filialSolicitante').innerText = `${c.bandeira} - ${c.filial}`;
+                document.getElementById('setorChamado').innerText = c.setor;
+                document.getElementById('descricaoChamado').innerText = c.descricao;
+
+                // Renderiza os links de anexos do Drive
+                const boxAnexos = document.getElementById('listaAnexos');
+                if (c.anexos && c.anexos.trim() !== '') {
+                    const links = c.anexos.split('\n');
+                    boxAnexos.innerHTML = '';
+                    links.forEach((link, idx) => {
+                        boxAnexos.innerHTML += `<a href="${link}" target="_blank">📁 Abrir Anexo ${idx + 1}</a>`;
+                    });
+                } else {
+                    boxAnexos.innerText = 'Nenhum anexo enviado.';
+                }
+
+                // Renderiza as mensagens de tramitação
+                renderizarChat(res.mensageria);
+            } else {
+                alert("Chamado não foi encontrado no sistema.");
+            }
+        } catch (err) {
+            console.error("Erro ao buscar chamado:", err);
+        }
+    }
+
+    // Renderiza a lista de mensagens no chat
+    function renderizarChat(mensagens) {
+        const chat = document.getElementById('chatHistorico');
+        chat.innerHTML = '';
+
+        if (!mensagens || mensagens.length === 0) {
+            chat.innerHTML = '<div style="text-align: center; color: #888; font-size: 13px;">Nenhuma mensagem trocada ainda.</div>';
+            return;
+        }
+
+        mensagens.forEach(m => {
+            const ehTI = m.autor.includes('TI') || m.autor.includes('CPD') || m.autor === usuarioLogado.nome;
+            const classeMsg = ehTI ? 'msg-ti' : 'msg-usuario';
+
+            chat.innerHTML += `
+                <div class="mensagem ${classeMsg}">
+                    <span class="msg-autor">${m.autor}</span>
+                    <div>${m.mensagem}</div>
+                    <span class="msg-data">${m.data}</span>
+                </div>
+            `;
+        });
+
+        // Rola automaticamente para o fim do chat
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    // Envia uma nova mensagem para a planilha de Tramites
+    async function enviarMensagem() {
+        const campoTexto = document.getElementById('msgTexto');
+        const mensagem = campoTexto.value.trim();
+
+        if (!mensagem) return;
+
+        campoTexto.value = '';
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    acao: 'enviar_tramite',
+                    idChamado: idChamado,
+                    autor: usuarioLogado.nome,
+                    mensagem: mensagem
+                })
+            });
+
+            const res = await response.json();
+            if (res.status === 'sucesso') {
+                carregarDetalhes(); // Recarrega para exibir a nova mensagem
+            }
+        } catch (err) {
+            alert("Erro ao enviar tramitação.");
+        }
+    }
+
+    window.onload = carregarDetalhes;
+</script>
+
+</body>
+</html>
