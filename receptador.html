@@ -349,7 +349,88 @@
         }
     }
 
-    
+    // Gera relatório em TSV masqueraded de XLS (Abre direto no LibreOffice Calc sem janelas)
+    async function gerarRelatorio() {
+        const selectElement = document.getElementById('selectLoja');
+        const lojaSelecionada = selectElement ? selectElement.value : "";
+        const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || {};
+
+        if (!usuarioLogado.matricula) {
+            alert("Sessão inválida ou matrícula não encontrada. Faça login novamente.");
+            return;
+        }
+
+        try {
+            console.log("Iniciando requisição do relatório...");
+
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    acao: 'dados_dashboard', 
+                    filial: lojaSelecionada,
+                    matricula: usuarioLogado.matricula 
+                })
+            });
+
+            const res = await response.json();
+            console.log("Resposta do servidor:", res);
+
+            if (res.status === 'negado') {
+                alert(res.mensagem || "Acesso negado para esta operação.");
+                return;
+            }
+
+            if (res.status !== 'sucesso') {
+                alert("Erro retornado pelo servidor ao buscar dados.");
+                return;
+            }
+
+            const chamados = res.chamados;
+
+            if (!chamados || chamados.length === 0) {
+                alert("Nenhum chamado encontrado para gerar o relatório com os filtros atuais.");
+                return;
+            }
+
+            // Construção do arquivo em formato TSV (.xls para LibreOffice)
+            let conteudo = "\uFEFF";
+            conteudo += "ID Chamado\tTítulo\tSolicitante\tSetor\tPrioridade\tStatus\n";
+
+            chamados.forEach(c => {
+                const id = (c.id || '').toString().replace(/[\t\n]/g, ' ');
+                const titulo = (c.titulo || '').toString().replace(/[\t\n]/g, ' ');
+                const solicitante = (c.solicitante || '').toString().replace(/[\t\n]/g, ' ');
+                const setor = (c.setor || '').toString().replace(/[\t\n]/g, ' ');
+                const prioridade = (c.prioridade || '').toString().replace(/[\t\n]/g, ' ');
+                const status = (c.status || '').toString().replace(/[\t\n]/g, ' ');
+
+                conteudo += `${id}\t${titulo}\t${solicitante}\t${setor}\t${prioridade}\t${status}\n`;
+            });
+
+            // Disparo do Download
+            const blob = new Blob([conteudo], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            
+            const dataHoje = new Date().toISOString().split('T')[0];
+            const nomeLoja = lojaSelecionada ? `_Loja_${lojaSelecionada}` : '_Geral';
+            
+            a.href = url;
+            a.download = `Relatorio_Chamados${nomeLoja}_${dataHoje}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+
+        } catch (err) {
+            console.error("Erro completo ao gerar relatório:", err);
+            alert("Erro na execução do relatório: " + err.message);
+        }
+    }
 
     // Atualize o window.onload para carregar as filiais primeiro
     window.onload = async () => {
