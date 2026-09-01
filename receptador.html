@@ -3,9 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boraaaaa</title>
+    <title>Painel do Receptor - TI / CPD</title>
+    <!-- Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f6f9; color: #333; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; background: #004691; color: white; padding: 15px 25px; border-radius: 8px; margin-bottom: 20px; }
+        .filtro-topo { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.15); padding: 8px 15px; border-radius: 6px; }
+        .filtro-topo select { padding: 6px 12px; border-radius: 4px; border: none; font-weight: bold; }
+
+        /* Dashboard de Gráficos */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .card-grafico { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+        .card-grafico h3 { margin-bottom: 15px; color: #004691; font-size: 16px; }
+        .canvas-container { height: 250px; position: relative; }
+
+        /* Estilo dos Botões Retráteis (Accordion) */
+        .btn-retratil { width: 100%; background: #ffffff; border: 1px solid #e0e0e0; padding: 15px 20px; text-align: left; font-size: 16px; font-weight: bold; color: #004691; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-top: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); transition: 0.2s; }
+        .btn-retratil:hover { background: #eef5ff; }
+        .painel-conteudo { display: none; background: white; padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; }
+
+        /* Tabelas */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #555; }
+        tr:hover { background-color: #f1f5f9; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge-pendente { background: #ffe2e2; color: #c0392b; }
+        .badge-atendimento { background: #fff3cd; color: #856404; }
+        
+        .btn-acao { background-color: #004691; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 13px; }
+        .btn-acao:hover { background-color: #003366; }
+        
+        /* Filtros de Data para Relatório */
+        .filtros-relatorio { display: flex; gap: 15px; align-items: flex-end; margin-bottom: 15px; }
+        .filtros-relatorio div { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: bold; }
+        .filtros-relatorio input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
 </head>
 <body>
-    <h1>Boraaaaa, Boraaaaa!</h1>
+
+<div class="container">
+    <header>
+        <h2>Painel de Gestão - TI / CPD</h2>
+        <div class="filtro-topo">
+            <label for="selectLoja">Filial:</label>
+            <select id="selectLoja" onchange="carregarDados()">
+                <option value="">Todas as Loja / Matriz</option>
+                <option value="Loja 01">Loja 01</option>
+                <option value="Loja 02">Loja 02</option>
+                <option value="Loja 03">Loja 03</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- GRÁFICOS INICIAIS -->
+    <div class="dashboard-grid">
+        <div class="card-grafico">
+            <h3>Chamados Ativos por Setor (Pizza)</h3>
+            <div class="canvas-container">
+                <canvas id="chartPizza"></canvas>
+            </div>
+        </div>
+        <div class="card-grafico">
+            <h3>Histórico de Problemas por Setor (Barras)</h3>
+            <div class="canvas-container">
+                <canvas id="chartBarras"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- FERRAMENTA 1: PAINEL DE CHAMADOS ATIVOS -->
+    <button class="btn-retratil" onclick="togglePainel('painelAtivos')">
+        <span>📋 Central de Chamados Ativos</span>
+        <span id="iconAtivos">▼</span>
+    </button>
+    <div id="painelAtivos" class="painel-conteudo">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Solicitante</th>
+                    <th>Setor</th>
+                    <th>Prioridade</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaAtivos">
+                <tr><td colspan="7">Carregando chamados...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- FERRAMENTA 2: RELATÓRIOS -->
+    <button class="btn-retratil" onclick="togglePainel('painelRelatorios')">
+        <span>📊 Gerador de Relatórios</span>
+        <span id="iconRelatorios">▼</span>
+    </button>
+    <div id="painelRelatorios" class="painel-conteudo">
+        <div class="filtros-relatorio">
+            <div>
+                <label>Data Início:</label>
+                <input type="date" id="dataInicio">
+            </div>
+            <div>
+                <label>Data Fim:</label>
+                <input type="date" id="dataFim">
+            </div>
+            <button class="btn-acao" onclick="gerarRelatorio()">Gerar Relatório</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Setor</th>
+                    <th>Solicitante</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaRelatorio">
+                <tr><td colspan="4">Selecione o período para gerar o relatório.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyszNaEjUlKHdS6sM_2tejIU2LSi4e6uFUWeq4-uTGXIFKHogKaAzrmgpffx8fqoZjX/exec';
+    let chartPizzaInst, chartBarrasInst;
+
+    // Controla a abertura dos painéis retráteis
+    function togglePainel(id) {
+        const painel = document.getElementById(id);
+        const estaAberto = painel.style.display === 'block';
+        painel.style.display = estaAberto ? 'none' : 'block';
+    }
+
+    // Busca os dados do Backend e renderiza gráficos e tabelas
+    async function carregarDados() {
+        const lojaSelecionada = document.getElementById('selectLoja').value;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ acao: 'dados_dashboard', filial: lojaSelecionada })
+            });
+
+            const res = await response.json();
+
+            if (res.status === 'sucesso') {
+                renderizarGraficoPizza(res.setoresAtivos);
+                renderizarGraficoBarras(res.setoresHistorico);
+                renderizarTabelaAtivos(res.chamados);
+            }
+        } catch (err) {
+            console.error("Erro ao carregar dados:", err);
+        }
+    }
+
+    // Renderiza Gráfico de Pizza (Ativos)
+    function renderizarGraficoPizza(dados) {
+        const ctx = document.getElementById('chartPizza').getContext('2d');
+        if (chartPizzaInst) chartPizzaInst.destroy();
+
+        chartPizzaInst = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(dados),
+                datasets: [{
+                    data: Object.values(dados),
+                    backgroundColor: ['#004691', '#ff9900', '#28a745', '#dc3545', '#6c757d']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // Renderiza Gráfico de Barras (Histórico)
+    function renderizarGraficoBarras(dados) {
+        const ctx = document.getElementById('chartBarras').getContext('2d');
+        if (chartBarrasInst) chartBarrasInst.destroy();
+
+        chartBarrasInst = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(dados),
+                datasets: [{
+                    label: 'Total de Problemas Ocorridos',
+                    data: Object.values(dados),
+                    backgroundColor: '#004691'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // Renderiza a Tabela de Ativos e adiciona o link para a página de Tramitação
+    function renderizarTabelaAtivos(chamados) {
+        const tbody = document.getElementById('tabelaAtivos');
+        tbody.innerHTML = '';
+
+        if (chamados.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7">Nenhum chamado ativo encontrado para esta unidade.</td></tr>';
+            return;
+        }
+
+        chamados.forEach(c => {
+            const badgeClass = c.status === 'Pendente' ? 'badge-pendente' : 'badge-atendimento';
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${c.id}</b></td>
+                    <td>${c.titulo}</td>
+                    <td>${c.solicitante}</td>
+                    <td>${c.setor}</td>
+                    <td>${c.prioridade}</td>
+                    <td><span class="badge ${badgeClass}">${c.status}</span></td>
+                    <td>
+                        <a href="idchamado.html?id=${c.id}" class="btn-acao">Abrir / Tramitar</a>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Executa ao carregar a página
+    window.onload = carregarDados;
+</script>
+
 </body>
 </html>
