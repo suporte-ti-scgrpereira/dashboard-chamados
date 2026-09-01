@@ -351,8 +351,14 @@
 
     // Gera relatório em TSV masqueraded de XLS (Abre direto no LibreOffice Calc sem janelas)
     async function gerarRelatorio() {
-        const lojaSelecionada = document.getElementById('selectLoja').value;
+        const selectElement = document.getElementById('selectLoja');
+        const lojaSelecionada = selectElement ? selectElement.value : "";
         const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || {};
+
+        if (!usuarioLogado.matricula) {
+            alert("Sessão inválida. Faça login novamente.");
+            return;
+        }
 
         try {
             const response = await fetch(API_URL, {
@@ -368,53 +374,82 @@
             const res = await response.json();
 
             if (res.status !== 'sucesso') {
-                alert("Erro ao carregar dados do relatório.");
+                alert(res.mensagem || "Erro ao buscar dados do relatório.");
                 return;
             }
 
             const chamados = res.chamados;
 
             if (!chamados || chamados.length === 0) {
-                alert("Nenhum chamado encontrado para gerar relatório neste filtro.");
+                alert("Nenhum chamado encontrado para os filtros selecionados.");
                 return;
             }
 
-            // Garante codificação UTF-8 perfeita
-            let conteudo = "\uFEFF";
+            // Função para escapar caracteres especiais no XML
+            const escaparXML = (txt) => (txt || '').toString()
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
 
-            // Cabeçalho separado por Tabulação (\t)
-            conteudo += "ID Chamado\tTítulo\tSolicitante\tSetor\tPrioridade\tStatus\n";
+            // Estrutura XML nativa do LibreOffice Calc (FODS)
+            let fodsContent = `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-spreadsheet xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+ xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+ xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+ office:version="1.2">
+ <office:body>
+  <office:spreadsheet>
+   <table:table table:name="Relatorio">
+    <table:tr>
+     <table:table-cell office:value-type="string"><text:p>ID Chamado</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>Título</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>Solicitante</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>Setor</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>Prioridade</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>Status</text:p></table:table-cell>
+    </table:tr>`;
 
-            // Linhas tratadas e separadas por Tabulação (\t)
             chamados.forEach(c => {
-                const id = (c.id || '').toString().replace(/[\t\n]/g, ' ');
-                const titulo = (c.titulo || '').toString().replace(/[\t\n]/g, ' ');
-                const solicitante = (c.solicitante || '').toString().replace(/[\t\n]/g, ' ');
-                const setor = (c.setor || '').toString().replace(/[\t\n]/g, ' ');
-                const prioridade = (c.prioridade || '').toString().replace(/[\t\n]/g, ' ');
-                const status = (c.status || '').toString().replace(/[\t\n]/g, ' ');
-
-                conteudo += `${id}\t${titulo}\t${solicitante}\t${setor}\t${prioridade}\t${status}\n`;
+                fodsContent += `
+    <table:tr>
+     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.id)}</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.titulo)}</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.solicitante)}</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.setor)}</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.prioridade)}</text:p></table:table-cell>
+     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.status)}</text:p></table:table-cell>
+    </table:tr>`;
             });
 
-            // Cria o Blob com o MIME-type exato de planilha Excel/Calc
-            const blob = new Blob([conteudo], { type: 'application/vnd.ms-excel;charset=utf-8' });
+            fodsContent += `
+   </table:table>
+  </office:spreadsheet>
+ </office:body>
+</office:document-spreadsheet>`;
+
+            // Dispara o download como .ods nativo
+            const blob = new Blob([fodsContent], { type: 'application/vnd.oasis.opendocument.spreadsheet' });
             const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
+            const a = document.createElement("a");
             
             const dataHoje = new Date().toISOString().split('T')[0];
             const nomeLoja = lojaSelecionada ? `_Loja_${lojaSelecionada}` : '_Geral';
             
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Relatorio_Chamados${nomeLoja}_${dataHoje}.xls`);
-            document.body.appendChild(link);
+            a.href = url;
+            a.download = `Relatorio_Chamados${nomeLoja}_${dataHoje}.ods`;
+            document.body.appendChild(a);
+            a.click();
             
-            link.click();
-            document.body.removeChild(link);
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
 
         } catch (err) {
             console.error("Erro ao gerar relatório:", err);
-            alert("Erro de conexão ao gerar o relatório.");
+            alert("Erro de conexão ao gerar relatório: " + err.message);
         }
     }
 
