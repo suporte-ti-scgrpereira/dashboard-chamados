@@ -349,7 +349,8 @@
         }
     }
 
-    // Função para exportar os chamados em formato compatível com LibreOffice Calc e Excel
+    // Gera relatório em formato de planilha nativa (.xls)
+    // Abre no LibreOffice Calc direto em colunas e sem pop-up de importação
     async function gerarRelatorio() {
         const lojaSelecionada = document.getElementById('selectLoja').value;
         const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || {};
@@ -368,7 +369,7 @@
             const res = await response.json();
 
             if (res.status !== 'sucesso') {
-                alert("Erro ao puxar dados para o relatório.");
+                alert("Erro ao carregar dados do relatório.");
                 return;
             }
 
@@ -379,22 +380,54 @@
                 return;
             }
 
-            // Instrui expressamente o LibreOffice a usar vírgula como separador de colunas
-            let csvContent = "\uFEFF"; 
-            csvContent += "sep=,\n"; 
-            csvContent += "ID Chamado,Título,Solicitante,Setor,Prioridade,Status\n";
+            // Monta a estrutura da planilha em formato HTML/Excel com UTF-8
+            let tabelaHTML = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="utf-8">
+                    <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>
+                    <x:Name>Relatório de Chamados</x:Name>
+                    <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+                    </x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+                </head>
+                <body>
+                    <table border="1">
+                        <thead>
+                            <tr style="background-color: #003366; color: #FFFFFF; font-weight: bold;">
+                                <th>ID Chamado</th>
+                                <th>Título</th>
+                                <th>Solicitante</th>
+                                <th>Setor</th>
+                                <th>Prioridade</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
 
-            // Preenche as linhas tratando aspas e vírgulas dentro do texto
+            // Preenche as linhas da tabela
             chamados.forEach(c => {
-                const tituloLimpo = `"${(c.titulo || '').replace(/"/g, '""')}"`;
-                const solicitanteLimpo = `"${(c.solicitante || '').replace(/"/g, '""')}"`;
-                const setorLimpo = `"${(c.setor || '').replace(/"/g, '""')}"`;
-                
-                csvContent += `${c.id},${tituloLimpo},${solicitanteLimpo},${setorLimpo},${c.prioridade},${c.status}\n`;
+                tabelaHTML += `
+                    <tr>
+                        <td>${c.id || ''}</td>
+                        <td>${c.titulo || ''}</td>
+                        <td>${c.solicitante || ''}</td>
+                        <td>${c.setor || ''}</td>
+                        <td>${c.prioridade || ''}</td>
+                        <td>${c.status || ''}</td>
+                    </tr>
+                `;
             });
 
-            // Cria o arquivo Blob com codificação UTF-8
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            tabelaHTML += `
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            // Cria o Blob indicando tipo de dados de planilha
+            const blob = new Blob([tabelaHTML], { type: 'application/vnd.ms-excel;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             
@@ -402,7 +435,7 @@
             const nomeLoja = lojaSelecionada ? `_Loja_${lojaSelecionada}` : '_Geral';
             
             link.setAttribute("href", url);
-            link.setAttribute("download", `Relatorio_Chamados${nomeLoja}_${dataHoje}.csv`);
+            link.setAttribute("download", `Relatorio_Chamados${nomeLoja}_${dataHoje}.xls`);
             document.body.appendChild(link);
             
             link.click();
