@@ -135,6 +135,42 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbyszNaEjUlKHdS6sM_2tejIU2LSi4e6uFUWeq4-uTGXIFKHogKaAzrmgpffx8fqoZjX/exec';
     let chartPizzaInst, chartBarrasInst;
 
+    // Bloqueio imediato na renderização da página
+    (function verificarSessao() {
+        const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+        
+        // 1. Verifica se existe login ativo
+        if (!usuarioLogado || !usuarioLogado.matricula) {
+            alert("Sessão inválida. Faça login novamente.");
+            window.location.href = "index.html";
+            return;
+        }
+
+        // 2. Trava de Perfil: Expulsa usuário comum se tentar entrar no Receptador
+        const cargo = usuarioLogado.cargo ? usuarioLogado.cargo.toUpperCase().trim() : "";
+        if (cargo !== "TI" && cargo !== "CPD") {
+            alert("Acesso restrito apenas para a equipe de TI / CPD!");
+            window.location.href = "solicitar.html";
+        }
+    })();
+
+    // Controla a abertura dos painéis retráteis
+    function togglePainel(id) {
+        const painel = document.getElementById(id);
+        const estaAberto = painel.style.display === 'block';
+        painel.style.display = estaAberto ? 'none' : 'block';
+    }
+
+    // Bloqueio imediato na renderização da página
+    (function verificarSessao() {
+        const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+        
+        if (!usuarioLogado || !usuarioLogado.matricula) {
+            alert("Sessão inválida. Faça login novamente.");
+            window.location.href = "index.html";
+        }
+    })();
+
     // Controla a abertura dos painéis retráteis
     function togglePainel(id) {
         const painel = document.getElementById(id);
@@ -145,15 +181,27 @@
     // Busca os dados do Backend e renderiza gráficos e tabelas
     async function carregarDados() {
         const lojaSelecionada = document.getElementById('selectLoja').value;
+        const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || {};
 
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ acao: 'dados_dashboard', filial: lojaSelecionada })
+                body: JSON.stringify({ 
+                    acao: 'dados_dashboard', 
+                    filial: lojaSelecionada,
+                    matricula: usuarioLogado.matricula // Envia a matrícula para validação real no servidor
+                })
             });
 
             const res = await response.json();
+
+            // SE O SERVIDOR NEGAR O ACESSO, EXPULSA O USUÁRIO DA PÁGINA
+            if (res.status === 'negado') {
+                alert(res.mensagem);
+                window.location.href = 'solicitar.html';
+                return;
+            }
 
             if (res.status === 'sucesso') {
                 renderizarGraficoPizza(res.setoresAtivos);
