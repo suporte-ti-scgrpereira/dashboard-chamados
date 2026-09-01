@@ -349,13 +349,12 @@
         }
     }
 
-    // Função para exportar os chamados em formato CSV/Excel
+    // Função para exportar os chamados em formato compatível com LibreOffice Calc e Excel
     async function gerarRelatorio() {
         const lojaSelecionada = document.getElementById('selectLoja').value;
         const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || {};
 
         try {
-            // Busca os dados atualizados direto do servidor
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -380,19 +379,21 @@
                 return;
             }
 
-            // Monta o cabeçalho do arquivo CSV
-            let csvContent = "\uFEFF"; // Byte Order Mark (BOM) para garantir acentuação correta no Excel
-            csvContent += "ID Chamado;Título;Solicitante;Setor;Prioridade;Status\n";
+            // Instrui expressamente o LibreOffice a usar vírgula como separador de colunas
+            let csvContent = "\uFEFF"; 
+            csvContent += "sep=,\n"; 
+            csvContent += "ID Chamado,Título,Solicitante,Setor,Prioridade,Status\n";
 
-            // Preenche as linhas com os dados
+            // Preenche as linhas tratando aspas e vírgulas dentro do texto
             chamados.forEach(c => {
                 const tituloLimpo = `"${(c.titulo || '').replace(/"/g, '""')}"`;
                 const solicitanteLimpo = `"${(c.solicitante || '').replace(/"/g, '""')}"`;
+                const setorLimpo = `"${(c.setor || '').replace(/"/g, '""')}"`;
                 
-                csvContent += `${c.id};${tituloLimpo};${solicitanteLimpo};${c.setor};${c.prioridade};${c.status}\n`;
+                csvContent += `${c.id},${tituloLimpo},${solicitanteLimpo},${setorLimpo},${c.prioridade},${c.status}\n`;
             });
 
-            // Cria o link invisível para download do arquivo
+            // Cria o arquivo Blob com codificação UTF-8
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
