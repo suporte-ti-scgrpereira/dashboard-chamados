@@ -44,6 +44,7 @@
         .filtros-relatorio div { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: bold; }
         .filtros-relatorio input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -385,67 +386,44 @@
                 return;
             }
 
-            // Função para escapar caracteres especiais no XML
-            const escaparXML = (txt) => (txt || '').toString()
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&apos;');
-
-            // Estrutura XML nativa do LibreOffice Calc (FODS)
-            let fodsContent = `<?xml version="1.0" encoding="UTF-8"?>
-<office:document-spreadsheet xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
- xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
- xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
- office:version="1.2">
- <office:body>
-  <office:spreadsheet>
-   <table:table table:name="Relatorio">
-    <table:tr>
-     <table:table-cell office:value-type="string"><text:p>ID Chamado</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>Título</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>Solicitante</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>Setor</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>Prioridade</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>Status</text:p></table:table-cell>
-    </table:tr>`;
+            // 1. Mapeia os dados em matriz para as colunas da planilha
+            const dadosPlanilha = [
+                ["ID Chamado", "Título", "Solicitante", "Setor", "Prioridade", "Status"]
+            ];
 
             chamados.forEach(c => {
-                fodsContent += `
-    <table:tr>
-     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.id)}</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.titulo)}</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.solicitante)}</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.setor)}</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.prioridade)}</text:p></table:table-cell>
-     <table:table-cell office:value-type="string"><text:p>${escaparXML(c.status)}</text:p></table:table-cell>
-    </table:tr>`;
+                dadosPlanilha.push([
+                    c.id || '',
+                    c.titulo || '',
+                    c.solicitante || '',
+                    c.setor || '',
+                    c.prioridade || '',
+                    c.status || ''
+                ]);
             });
 
-            fodsContent += `
-   </table:table>
-  </office:spreadsheet>
- </office:body>
-</office:document-spreadsheet>`;
+            // 2. Cria a estrutura de dados usando o SheetJS
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(dadosPlanilha);
 
-            // Dispara o download como .ods nativo
-            const blob = new Blob([fodsContent], { type: 'application/vnd.oasis.opendocument.spreadsheet' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            
+            // Ajusta a largura automática das colunas para não cortar texto
+            ws['!cols'] = [
+                { wch: 15 }, // ID Chamado
+                { wch: 50 }, // Título
+                { wch: 25 }, // Solicitante
+                { wch: 25 }, // Setor
+                { wch: 15 }, // Prioridade
+                { wch: 15 }  // Status
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, "Chamados");
+
+            // 3. Exporta o arquivo diretamente no formato nativo .ods
             const dataHoje = new Date().toISOString().split('T')[0];
             const nomeLoja = lojaSelecionada ? `_Loja_${lojaSelecionada}` : '_Geral';
-            
-            a.href = url;
-            a.download = `Relatorio_Chamados${nomeLoja}_${dataHoje}.ods`;
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
+            const nomeArquivo = `Relatorio_Chamados${nomeLoja}_${dataHoje}.ods`;
+
+            XLSX.writeFile(wb, nomeArquivo, { bookType: 'ods' });
 
         } catch (err) {
             console.error("Erro ao gerar relatório:", err);
