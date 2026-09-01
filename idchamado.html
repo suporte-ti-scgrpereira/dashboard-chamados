@@ -48,7 +48,8 @@
 
 <div class="container">
     <div class="header-top">
-        <a href="receptador.html" class="btn-voltar">← Voltar ao Painel</a>
+        <!-- Substitua o link antigo por este botão com função dinamica -->
+        <button onclick="voltarPaginaAnterior()" class="btn-voltar">← Voltar ao Painel</button>
         <h3 id="idChamadoTitulo" style="color: #004691;">Chamado: ...</h3>
     </div>
 
@@ -262,7 +263,37 @@
         }
     }
 
-    window.onload = carregarDetalhes;
+    // Bloqueia e redireciona o botão "Voltar" com base no cargo do usuário
+    function voltarPaginaAnterior() {
+        const cargo = usuarioLogado.cargo ? usuarioLogado.cargo.toUpperCase().trim() : "";
+        
+        if (cargo === "TI" || cargo === "CPD") {
+            window.location.href = "receptador.html";
+        } else {
+            window.location.href = "solicitar.html";
+        }
+    }
+
+    // Trava adicional: Oculta os seletores de Status e Prioridade para quem NÃO é TI
+    function validarPerfilAcesso() {
+        const cargo = usuarioLogado.cargo ? usuarioLogado.cargo.toUpperCase().trim() : "";
+        const ehTI = cargo === "TI" || cargo === "CPD";
+
+        // Se não for TI, desabilita a alteração de Status/Prioridade na tela do chamado
+        const selectStatus = document.getElementById('selectStatus');
+        const selectPrioridade = document.getElementById('selectPrioridade');
+
+        if (!ehTI) {
+            if (selectStatus) selectStatus.disabled = true;
+            if (selectPrioridade) selectPrioridade.disabled = true;
+        }
+    }
+
+    // Execute essa validação junto com o carregarDetalhes no onload
+    window.onload = () => {
+        validarPerfilAcesso();
+        carregarDetalhes();
+    };
 </script>
 
 </body>
