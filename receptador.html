@@ -53,11 +53,7 @@
         <div class="filtro-topo">
             <label for="selectLoja">Filial:</label>
             <select id="selectLoja" onchange="carregarDados()">
-                <option value="">Todas as Loja / Matriz</option>
-                <option value="325">325</option>
-                <option value="Loja 11">Loja 11</option>
-                <option value="Loja 223">Loja 223</option>
-                <option value="Loja 160">Loja 160</option>
+                <option value="">Todas as Lojas / Matriz</option>
             </select>
         </div>
     </header>
@@ -274,8 +270,40 @@
         }
     }
 
-    // Executa ao carregar a página
-    window.onload = carregarDados;
+    // Busca a lista de filiais dinâmicas cadastradas na planilha de usuários
+    async function carregarFiliaisDinamicas() {
+        const selectLoja = document.getElementById('selectLoja');
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ acao: 'buscar_filiais' })
+            });
+
+            const res = await response.json();
+
+            if (res.status === 'sucesso' && res.filiais.length > 0) {
+                // Limpa opções antigas mantendo apenas "Todas"
+                selectLoja.innerHTML = '<option value="">Todas as Lojas / Matriz</option>';
+
+                res.filiais.forEach(filial => {
+                    const opt = document.createElement('option');
+                    opt.value = filial;
+                    opt.innerText = isNaN(filial) ? filial : `Loja ${filial}`; // Formata números bonitinho ex: "Loja 325"
+                    selectLoja.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error("Erro ao carregar filiais:", err);
+        }
+    }
+
+    // Atualize o window.onload para carregar as filiais primeiro
+    window.onload = async () => {
+        await carregarFiliaisDinamicas();
+        carregarDados();
+    };
 </script>
 
 </body>
