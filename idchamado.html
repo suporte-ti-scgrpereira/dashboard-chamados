@@ -5,43 +5,128 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tramitação do Chamado</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; padding: 20px; color: #333; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
+    
+        body { 
+            background-color: #121214; 
+            padding: 20px; 
+            color: #e1e1e6; 
+            background-image: url('logo-empresa.png'); 
+            background-repeat: no-repeat;
+            background-position: center 35%;
+            background-size: 320px auto;
+            background-attachment: fixed;
+        }
+    
         .container { max-width: 900px; margin: 0 auto; }
-        
+    
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn-voltar { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: bold; font-size: 14px; }
         
-        .card { background: white; border-radius: 8px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .card-header { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .card-header h2 { color: #004691; font-size: 20px; }
-        
-        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; background: #f8f9fa; padding: 15px; border-radius: 6px; }
-        .info-item label { font-size: 12px; color: #666; font-weight: bold; display: block; }
-        .info-item span { font-size: 14px; color: #222; font-weight: 600; }
-        
-        .descricao-box { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 6px; margin-bottom: 15px; line-height: 1.5; font-size: 14px; }
-        
-        /* Seção de Anexos */
+        .btn-voltar { 
+            background: #29292e; 
+            color: #e1e1e6; 
+            border: 1px solid #323238; 
+            padding: 8px 15px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 14px; 
+            transition: 0.2s;
+        }
+        .btn-voltar:hover { background: #323238; color: #ffffff; }
+    
+        .card { 
+            background: rgba(30, 30, 36, 0.92); 
+            border: 1px solid #2d2d35; 
+            border-radius: 8px; 
+            padding: 25px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4); 
+            margin-bottom: 20px; 
+            backdrop-filter: blur(4px);
+        }
+    
+        .card-header { border-bottom: 1px solid #323238; padding-bottom: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .card-header h2 { color: #00b37e; font-size: 20px; }
+    
+        .info-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin-bottom: 15px; 
+            background: #18181b; 
+            border: 1px solid #27272a; 
+            padding: 15px; 
+            border-radius: 6px; 
+        }
+        .info-item label { font-size: 12px; color: #a1a1aa; font-weight: bold; display: block; margin-bottom: 3px; }
+        .info-item span { font-size: 14px; color: #f4f4f5; font-weight: 600; }
+    
+        .descricao-box { 
+            background: #18181b; 
+            border: 1px solid #27272a; 
+            color: #e4e4e7; 
+            padding: 15px; 
+            border-radius: 6px; 
+            margin-bottom: 15px; 
+            line-height: 1.5; 
+            font-size: 14px; 
+        }
+    
+        /* Anexos */
         .anexos-box { margin-bottom: 15px; }
-        .anexos-box a { display: inline-block; background: #e0e0e0; color: #333; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; margin-right: 8px; margin-top: 5px; }
-        .anexos-box a:hover { background: #d0d0d0; }
-
+        .anexos-box a { 
+            display: inline-block; 
+            background: #27272a; 
+            color: #00b37e; 
+            border: 1px solid #3f3f46; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            font-size: 13px; 
+            font-weight: bold; 
+            margin-right: 8px; 
+            margin-top: 5px; 
+            transition: 0.2s;
+        }
+        .anexos-box a:hover { background: #3f3f46; color: #00e6a1; }
+    
         /* Chat de Tramitação */
-        .chat-container { border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fafafa; }
+        .chat-container { border: 1px solid #27272a; border-radius: 6px; overflow: hidden; background: #18181b; }
         .chat-historico { height: 300px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        
+    
         .mensagem { max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 14px; position: relative; }
-        .msg-ti { background: #eef5ff; border: 1px solid #b3d4fc; align-self: flex-start; }
-        .msg-usuario { background: #e2f0d9; border: 1px solid #c2e0b6; align-self: flex-end; }
         
-        .msg-autor { font-weight: bold; font-size: 12px; color: #004691; margin-bottom: 3px; display: block; }
-        .msg-data { font-size: 10px; color: #888; text-align: right; margin-top: 5px; display: block; }
-
-        .chat-input { display: flex; padding: 10px; background: white; border-top: 1px solid #ddd; gap: 10px; }
-        .chat-input textarea { flex: 1; border: 1px solid #ccc; border-radius: 4px; padding: 10px; font-size: 14px; resize: none; height: 45px; }
-        .btn-enviar { background: #004691; color: white; border: none; padding: 0 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-        .btn-enviar:hover { background: #003366; }
+        /* Balão Suporte / TI */
+        .msg-ti { background: #202b26; border: 1px solid #00b37e; align-self: flex-start; color: #e1e1e6; }
+        
+        /* Balão Usuário */
+        .msg-usuario { background: #27272a; border: 1px solid #3f3f46; align-self: flex-end; color: #e1e1e6; }
+    
+        .msg-autor { font-weight: bold; font-size: 12px; color: #00b37e; margin-bottom: 3px; display: block; }
+        .msg-data { font-size: 10px; color: #a1a1aa; text-align: right; margin-top: 5px; display: block; }
+    
+        .chat-input { display: flex; padding: 10px; background: #202024; border-top: 1px solid #27272a; gap: 10px; }
+        .chat-input textarea { 
+            flex: 1; 
+            background: #121214; 
+            border: 1px solid #323238; 
+            color: #ffffff; 
+            border-radius: 4px; 
+            padding: 10px; 
+            font-size: 14px; 
+            resize: none; 
+            height: 45px; 
+        }
+        .chat-input textarea:focus { border-color: #00b37e; outline: none; }
+    
+        .btn-enviar { background: #00b37e; color: white; border: none; padding: 0 20px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-enviar:hover { background: #00875f; }
     </style>
 </head>
 <body>
