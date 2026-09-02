@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Solicitante - Novo Chamado</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        }
     
         body { 
             background-color: #121214; 
@@ -19,9 +24,9 @@
         }
     
         .container { 
-            max-width: 700px; 
+            max-width: 900px; 
             margin: 0 auto; 
-            background: rgba(30, 30, 36, 0.92); 
+            background: rgba(30, 30, 36, 0.94); 
             padding: 30px; 
             border-radius: 8px; 
             border: 1px solid #2d2d35;
@@ -38,7 +43,7 @@
             margin-bottom: 20px; 
         }
     
-        h2 { color: #00b37e; }
+        h2, h3 { color: #00b37e; }
         .user-info { font-size: 14px; color: #a8a8b3; text-align: right; }
     
         .form-group { margin-bottom: 15px; }
@@ -83,6 +88,107 @@
         .msg.sucesso { color: #00b37e; }
         .msg.erro { color: #f87171; }
         .anexo-info { font-size: 12px; color: #8d8d99; margin-top: 4px; }
+    
+        /* ESTILIZAÇÃO DA TABELA DE CHAMADOS ATIVOS */
+        .tabela-container {
+            margin-top: 25px;
+            overflow-x: auto;
+        }
+    
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #18181b;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #27272a;
+        }
+    
+        th {
+            background-color: #202024;
+            color: #00b37e;
+            font-weight: 700;
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 2px solid #2d2d35;
+            font-size: 14px;
+        }
+    
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #27272a;
+            color: #e1e1e6;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+    
+        tr:hover {
+            background-color: #202024;
+        }
+    
+        /* FIX DAS TAGS DE STATUS COM TEXTO ESCURO E VISÍVEL */
+        .status-badge, .badge, status-tag, [class*="status"] {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.3px;
+            color: #121214 !important; /* Força cor de texto escura para dar leitura */
+        }
+    
+        /* CORES ESPECÍFICAS PARA CADA STATUS */
+        /* Em Atendimento (Amarelo / Laranja) */
+        .status-atendimento, [data-status*="Atendimento"], .status-em-atendimento {
+            background-color: #fba94c !important;
+            color: #121214 !important;
+        }
+    
+        /* Pendente / Novo (Azul) */
+        .status-pendente, [data-status*="Pendente"] {
+            background-color: #38bdf8 !important;
+            color: #0f172a !important;
+        }
+    
+        /* Concluído / Resolvido (Verde) */
+        .status-concluido, [data-status*="Concluído"], .status-resolvido {
+            background-color: #00b37e !important;
+            color: #042f22 !important;
+        }
+    
+        /* Cancelado (Vermelho) */
+        .status-cancelado, [data-status*="Cancelado"] {
+            background-color: #f87171 !important;
+            color: #450a0a !important;
+        }
+    
+        /* Regra geral caso nenhuma classe acima pegue */
+        td span {
+            color: #121214;
+        }
+    
+        /* BOTÃO "VER / TRAMITAR" */
+        .btn-tramitar, table a.btn, table button {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #202024;
+            color: #00b37e !important;
+            border: 1px solid #00b37e;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+    
+        .btn-tramitar:hover, table a.btn:hover, table button:hover {
+            background-color: #00b37e;
+            color: #ffffff !important;
+        }
     </style>
 </head>
 <body>
