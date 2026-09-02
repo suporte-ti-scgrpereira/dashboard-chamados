@@ -6,22 +6,83 @@
     <title>Painel do Solicitante - Novo Chamado</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; padding: 20px; }
-        .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #004691; padding-bottom: 15px; margin-bottom: 20px; }
-        h2 { color: #004691; }
-        .user-info { font-size: 14px; color: #555; text-align: right; }
+    
+        body { 
+            background-color: #121214; 
+            padding: 20px; 
+            color: #e1e1e6;
+            background-image: url('logo-empresa.png'); 
+            background-repeat: no-repeat;
+            background-position: center 35%;
+            background-size: 320px auto;
+            background-attachment: fixed;
+        }
+    
+        .container { 
+            max-width: 700px; 
+            margin: 0 auto; 
+            background: rgba(30, 30, 36, 0.92); 
+            padding: 30px; 
+            border-radius: 8px; 
+            border: 1px solid #2d2d35;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4); 
+            backdrop-filter: blur(4px);
+        }
+    
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #00b37e; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+        }
+    
+        h2 { color: #00b37e; }
+        .user-info { font-size: 14px; color: #a8a8b3; text-align: right; }
+    
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #c4c4cc; font-size: 14px; }
+        
+        input, select, textarea { 
+            width: 100%; 
+            padding: 10px; 
+            background-color: #121214; 
+            border: 1px solid #323238; 
+            color: #ffffff; 
+            border-radius: 4px; 
+            font-size: 14px; 
+        }
+    
+        input:focus, select:focus, textarea:focus {
+            border-color: #00b37e;
+            outline: none;
+        }
+    
         textarea { height: 100px; resize: vertical; }
-        .btn-enviar { width: 100%; padding: 12px; background-color: #004691; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-enviar:hover { background-color: #003366; }
-        .btn-enviar:disabled { background-color: #aaa; cursor: not-allowed; }
+    
+        .btn-enviar { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: #00b37e; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            transition: 0.2s;
+        }
+    
+        .btn-enviar:hover { background-color: #00875f; }
+        .btn-enviar:disabled { background-color: #323238; color: #7c7c8a; cursor: not-allowed; }
+    
         .msg { margin-top: 15px; text-align: center; font-size: 14px; font-weight: bold; }
-        .msg.sucesso { color: #5cb85c; }
-        .msg.erro { color: #d9534f; }
-        .anexo-info { font-size: 12px; color: #666; margin-top: 4px; }
+        .msg.sucesso { color: #00b37e; }
+        .msg.erro { color: #f87171; }
+        .anexo-info { font-size: 12px; color: #8d8d99; margin-top: 4px; }
     </style>
 </head>
 <body>
