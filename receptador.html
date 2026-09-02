@@ -114,8 +114,17 @@
                 <label>Data Fim:</label>
                 <input type="date" id="dataFim">
             </div>
-            <button onclick="gerarRelatorio()" class="btn-acao" style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                📊 Gerar Relatório (CSV)
+            <!-- Filtro de Tipo de Relatório -->
+            <select id="selectTipoRelatorio" style="padding: 9px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;">
+                <option value="TODOS">📊 Relatório: Todos os Chamados (Geral)</option>
+                <option value="ATIVOS">⏳ Somente Ativos (Pendentes / Em Atendimento)</option>
+                <option value="Concluído">✅ Somente Concluídos</option>
+                <option value="Cancelado">❌ Somente Cancelados</option>
+            </select>
+        
+            <!-- Botão de Ação -->
+            <button onclick="gerarRelatorio()" style="background-color: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                📥 Baixar Relatório (.ods)
             </button>
         </div>
         <table>
@@ -352,8 +361,12 @@
 
     // Gera relatório em TSV masqueraded de XLS (Abre direto no LibreOffice Calc sem janelas)
     async function gerarRelatorio() {
-        const selectElement = document.getElementById('selectLoja');
-        const lojaSelecionada = selectElement ? selectElement.value : "";
+        const selectLoja = document.getElementById('selectLoja');
+        const selectTipo = document.getElementById('selectTipoRelatorio');
+        
+        const lojaSelecionada = selectLoja ? selectLoja.value : "";
+        const tipoFiltro = selectTipo ? selectTipo.value : "TODOS";
+        
         const usuarioLogado = JSON.parse(sessionStorage.getItem('usuarioLogado')) || {};
 
         if (!usuarioLogado.matricula) {
@@ -379,49 +392,69 @@
                 return;
             }
 
-            const chamados = res.chamados;
+            // Pega a lista completa trazida do servidor (ativos + histórico)
+            let baseChamados = res.todosChamados || res.chamados || [];
 
-            if (!chamados || chamados.length === 0) {
-                alert("Nenhum chamado encontrado para os filtros selecionados.");
+            if (baseChamados.length === 0) {
+                alert("Nenhum chamado encontrado na base de dados.");
                 return;
             }
 
-            // 1. Mapeia os dados em matriz para as colunas da planilha
+            // Aplica a filtragem por Status conforme seleção do usuário
+            let chamadosFiltrados = [];
+
+            if (tipoFiltro === "TODOS") {
+                chamadosFiltrados = baseChamados;
+            } else if (tipoFiltro === "ATIVOS") {
+                chamadosFiltrados = baseChamados.filter(c => c.status !== "Concluído" && c.status !== "Cancelado");
+            } else {
+                // Filtra exatamente por 'Concluído' ou 'Cancelado'
+                chamadosFiltrados = baseChamados.filter(c => (c.status || '').toLowerCase() === tipoFiltro.toLowerCase());
+            }
+
+            if (chamadosFiltrados.length === 0) {
+                alert(`Nenhum chamado encontrado para o filtro "${tipoFiltro}".`);
+                return;
+            }
+
+            // 1. Monta a matriz de dados para a planilha
             const dadosPlanilha = [
-                ["ID Chamado", "Título", "Solicitante", "Setor", "Prioridade", "Status"]
+                ["ID Chamado", "Filial / Loja", "Solicitante", "Setor", "Título", "Prioridade", "Status"]
             ];
 
-            chamados.forEach(c => {
+            chamadosFiltrados.forEach(c => {
                 dadosPlanilha.push([
                     c.id || '',
-                    c.titulo || '',
+                    c.filial || '',
                     c.solicitante || '',
                     c.setor || '',
+                    c.titulo || '',
                     c.prioridade || '',
                     c.status || ''
                 ]);
             });
 
-            // 2. Cria a estrutura de dados usando o SheetJS
+            // 2. Criação do arquivo .ods via SheetJS
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(dadosPlanilha);
 
-            // Ajusta a largura automática das colunas para não cortar texto
+            // Definição das larguras das colunas
             ws['!cols'] = [
                 { wch: 15 }, // ID Chamado
-                { wch: 50 }, // Título
+                { wch: 20 }, // Filial
                 { wch: 25 }, // Solicitante
                 { wch: 25 }, // Setor
+                { wch: 50 }, // Título
                 { wch: 15 }, // Prioridade
                 { wch: 15 }  // Status
             ];
 
-            XLSX.utils.book_append_sheet(wb, ws, "Chamados");
+            XLSX.utils.book_append_sheet(wb, ws, "Relatório");
 
-            // 3. Exporta o arquivo diretamente no formato nativo .ods
+            // 3. Download do arquivo .ods
             const dataHoje = new Date().toISOString().split('T')[0];
             const nomeLoja = lojaSelecionada ? `_Loja_${lojaSelecionada}` : '_Geral';
-            const nomeArquivo = `Relatorio_Chamados${nomeLoja}_${dataHoje}.ods`;
+            const nomeArquivo = `Relatorio_${tipoFiltro}${nomeLoja}_${dataHoje}.ods`;
 
             XLSX.writeFile(wb, nomeArquivo, { bookType: 'ods' });
 
